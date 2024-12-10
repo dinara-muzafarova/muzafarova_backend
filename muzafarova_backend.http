@@ -1,0 +1,6 @@
+@muzafarova_backend_HostAddress = http://localhost:5268
+
+GET {{muzafarova_backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
