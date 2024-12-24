@@ -1,19 +1,33 @@
-﻿namespace muzafarova_backend.Models
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace muzafarova_backend.Models
 {
     public class booking
     {
-        public int Id { get; set; }
-        public flight Flight { get; set; }
-        public passenger Passenger { get; set; }
-        public DateTime BookingDate { get; set; }
-        public int Price { get; set; }
+        [Key]
+        public int Id { get; set; } // Уникальный идентификатор бронирования
 
-        // Метод для расчета стоимости билета
-        //public void CalculatePrice()
-        //{
-        //    // Логика расчета цены может зависеть от различных факторов, таких как расстояние, класс обслуживания и т.д.
-        //    // В данном примере просто фиксированная цена
-        //    Price = 1000m;
-        //}
+        [Required]
+        [ForeignKey("Flight")]
+        public int FlightId { get; set; } // ID связанного рейса
+
+        [Required]
+        [ForeignKey("Passenger")]
+        public int PassengerId { get; set; } // ID связанного пассажира
+
+        [Required]
+        public DateTime BookingDate { get; set; } = DateTime.Now;
+        public int SeatsBooked { get; set; } // Количество забронированных мест
+
+        [Required]
+        [Range(0, int.MaxValue, ErrorMessage = "Price must be a positive value")]
+
+        public int TotalPrice { get; set; } // Общая стоимость бронирования
+
+        // Навигационные свойства (опционально, для EF Core, но скрыты из ввода)
+        public virtual flight Flight { get; set; } // Связанный рейс
+        public virtual passenger Passenger { get; set; } // Связанный пассажир
     }
 }

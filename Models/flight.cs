@@ -1,22 +1,30 @@
-﻿namespace muzafarova_backend.Models
+﻿using Newtonsoft.Json;
+
+namespace muzafarova_backend.Models
 {
     public class flight
     {
         public int Id { get; set; }
-        public string DepartureCity { get; set; }
-        public string ArrivalCity { get; set; }
-        public DateTime DepartureTime { get; set; }
-        public DateTime ArrivalTime { get; set; }
-        public int TotalSeats { get; set; }
-        public int AvailableSeats { get; set; }
+
+        public string FlightNumber { get; set; }
+        public string DepartureCity { get; set; } //город отправления
+        public string ArrivalCity { get; set; } //город прибытия
+        public DateTime DepartureTime { get; set; } //время отправления
+        public DateTime ArrivalTime { get; set; } //время прилета
+        public int TotalSeats { get; set; } //общее количество мест
+        public int AvailableSeats { get; set; } //доступное колво мест
+
+        public int PricePerSeat { get; set; } // Цена за место
+
 
         // Список бронирований на этот рейс
-        //public List<Booking> Bookings { get; set; }
+        [JsonIgnore]
+        public List<booking> Bookings { get; set; }
 
-        // Метод для обновления количества доступных мест при создании нового бронирования
-        //public void UpdateAvailableSeats()
-        //{
-        //    AvailableSeats = TotalSeats - Bookings.Count;
-        //}
+
+        public bool HasAvailableSeats()
+        {
+            return AvailableSeats > 0;
+        }
     }
 }

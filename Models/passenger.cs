@@ -1,21 +1,24 @@
-﻿namespace muzafarova_backend.Models
+﻿using Newtonsoft.Json;
+
+namespace muzafarova_backend.Models
 {
     public class passenger
     {
         public int Id { get; set; }
-        public string FullName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
         public string Email { get; set; }
+        public int Phone { get; set; }
+        public DateTime BirthDate { get; set; }
 
         // Список бронирований пассажира
-        //public List<Booking> Bookings { get; set; }
 
-        // Метод для добавления нового бронирования пассажиру
-        //public void AddBooking(Booking booking)
-        //{
-        //    if (Bookings == null)
-        //        Bookings = new List<Booking>();
+        public List<booking> Bookings { get; set; }
 
-        //    Bookings.Add(booking);
-        //}
+        // Добавление бронирования
+        /*public void AddBooking(booking booking)
+        {
+            Bookings.Add(booking);
+        }*/
     }
 }

@@ -14,8 +14,29 @@ namespace muzafarova_backend.Data
         {
         }
 
-        public DbSet<muzafarova_backend.Models.flight> flight { get; set; } = default!;
-        public DbSet<muzafarova_backend.Models.passenger> passenger { get; set; } = default!;
-        public DbSet<muzafarova_backend.Models.booking> booking { get; set; } = default!;
+        public DbSet<muzafarova_backend.Models.flight> Flight { get; set; } = default!;
+        public DbSet<muzafarova_backend.Models.passenger> Passenger { get; set; } = default!;
+        public DbSet<muzafarova_backend.Models.booking> Booking { get; set; } = default!;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Связь между booking и passenger
+            modelBuilder.Entity<booking>()
+                .HasOne(b => b.Passenger)
+                .WithMany(p => p.Bookings)
+                .HasForeignKey(b => b.PassengerId)
+                .OnDelete(DeleteBehavior.NoAction); // Изменено на Restrict для предотвращения каскадного удаления
+
+            // Связь между booking и flight
+            modelBuilder.Entity<booking>()
+                .HasOne(b => b.Flight)
+                .WithMany(f => f.Bookings)
+                .HasForeignKey(b => b.FlightId)
+                .OnDelete(DeleteBehavior.NoAction);
+                //.OnUpdate(UpdateBehavior.NoAction); // Оставлено каскадное удаление
+        }
+
     }
 }

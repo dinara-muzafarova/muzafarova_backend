@@ -39,7 +39,10 @@ namespace muzafarova_backend.Migrations
                     b.Property<int>("PassengerId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Price")
+                    b.Property<int>("SeatsBooked")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalPrice")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -48,7 +51,7 @@ namespace muzafarova_backend.Migrations
 
                     b.HasIndex("PassengerId");
 
-                    b.ToTable("booking");
+                    b.ToTable("Booking");
                 });
 
             modelBuilder.Entity("muzafarova_backend.Models.flight", b =>
@@ -76,12 +79,19 @@ namespace muzafarova_backend.Migrations
                     b.Property<DateTime>("DepartureTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("FlightNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PricePerSeat")
+                        .HasColumnType("int");
+
                     b.Property<int>("TotalSeats")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.ToTable("flight");
+                    b.ToTable("Flight");
                 });
 
             modelBuilder.Entity("muzafarova_backend.Models.passenger", b =>
@@ -92,36 +102,56 @@ namespace muzafarova_backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("BirthDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FullName")
+                    b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Phone")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.ToTable("passenger");
+                    b.ToTable("Passenger");
                 });
 
             modelBuilder.Entity("muzafarova_backend.Models.booking", b =>
                 {
                     b.HasOne("muzafarova_backend.Models.flight", "Flight")
-                        .WithMany()
+                        .WithMany("Bookings")
                         .HasForeignKey("FlightId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("muzafarova_backend.Models.passenger", "Passenger")
-                        .WithMany()
+                        .WithMany("Bookings")
                         .HasForeignKey("PassengerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Flight");
 
                     b.Navigation("Passenger");
+                });
+
+            modelBuilder.Entity("muzafarova_backend.Models.flight", b =>
+                {
+                    b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("muzafarova_backend.Models.passenger", b =>
+                {
+                    b.Navigation("Bookings");
                 });
 #pragma warning restore 612, 618
         }

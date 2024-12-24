@@ -25,35 +25,91 @@ namespace muzafarova_backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<booking>>> Getbooking()
         {
-            return await _context.booking.ToListAsync();
+            var booking = await _context.Booking
+                .Include(b => b.Passenger) // Подключаем данные пассажира
+                .Include(b => b.Flight)    // Подключаем данные рейса
+                .ToListAsync();
+
+            if (booking == null || booking.Count == 0)
+            {
+                return NotFound("No bookings found.");
+            }
+
+            return Ok(booking);
         }
 
         // GET: api/bookings/5
         [HttpGet("{id}")]
         public async Task<ActionResult<booking>> Getbooking(int id)
         {
-            var booking = await _context.booking.FindAsync(id);
+            var booking = await _context.Booking
+                .Include(b => b.Passenger) // Включаем информацию о пассажире
+                .Include(b => b.Flight)    // Включаем информацию о рейсе
+                .Where(b => b.Id == id)    // Фильтруем по ID
+                .FirstOrDefaultAsync();
 
             if (booking == null)
             {
-                return NotFound();
+                return NotFound("Бронирование не найдено.");
             }
 
-            return booking;
+            return Ok(new
+            {
+                BookingId = booking.Id,
+                SeatsBooked = booking.SeatsBooked,
+                TotalPrice = booking.TotalPrice,
+                BookingDate = booking.BookingDate,
+                Passenger = new
+                {
+                    booking.Passenger.FirstName,
+                    booking.Passenger.LastName,
+                    booking.Passenger.Email,
+                    booking.Passenger.Phone,
+                    booking.Passenger.BirthDate
+                },
+                Flight = new
+                {
+                    booking.Flight.DepartureCity,
+                    booking.Flight.ArrivalCity,
+                    booking.Flight.DepartureTime,
+                    booking.Flight.ArrivalTime,
+                    booking.Flight.AvailableSeats,
+                    booking.Flight.PricePerSeat
+                }
+            });
         }
+
+
 
         // PUT: api/bookings/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> Putbooking(int id, booking booking)
+        public async Task<IActionResult> Putbooking(int id, [FromBody] BookingCreateDto bookingDto)
         {
-            if (id != booking.Id)
+            var booking = await _context.Booking
+                .Include(b => b.Flight)  // Включаем рейс для обновления информации о местах и цене
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null)
             {
-                return BadRequest();
+                return NotFound("Бронирование не найдено.");
             }
 
-            _context.Entry(booking).State = EntityState.Modified;
+            // Проверка на доступность мест
+            var availableSeats = booking.Flight.AvailableSeats + booking.SeatsBooked; // Количество мест, которое можно забронировать
+            if (bookingDto.SeatsBooked > availableSeats)
+            {
+                return BadRequest("Недостаточно мест для изменения бронирования.");
+            }
 
+            // Обновляем количество мест и общую цену
+            booking.SeatsBooked = bookingDto.SeatsBooked;
+            booking.TotalPrice = booking.Flight.PricePerSeat * bookingDto.SeatsBooked;
+
+            // Обновляем количество доступных мест
+            booking.Flight.AvailableSeats = availableSeats - bookingDto.SeatsBooked;
+
+            // Сохраняем изменения в базе данных
             try
             {
                 await _context.SaveChangesAsync();
@@ -70,31 +126,69 @@ namespace muzafarova_backend.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok("Бронирование успешно обновлено.");
         }
 
         // POST: api/bookings
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<booking>> Postbooking(booking booking)
+        public async Task<IActionResult> PostBooking(BookingCreateDto dto)
         {
-            _context.booking.Add(booking);
+            // Найти рейс по ID
+            var flight = await _context.Flight.FindAsync(dto.FlightId);
+            if (flight == null)
+            {
+                return NotFound("Рейс не найден");
+            }
+
+            // Проверка доступности мест
+            if (flight.AvailableSeats < dto.SeatsBooked)
+            {
+                return BadRequest("Недостаточно свободных мест на рейс.");
+            }
+
+            // Рассчитываем цену на основе количества мест и цены за место
+            int totalPrice = flight.PricePerSeat * dto.SeatsBooked;
+
+            // Создаем новое бронирование
+            var booking = new booking
+            {
+                FlightId = dto.FlightId,
+                PassengerId = dto.PassengerId,
+                SeatsBooked = dto.SeatsBooked,
+                TotalPrice = totalPrice, // Автоматически рассчитанная цена
+                BookingDate = DateTime.UtcNow
+            };
+
+            // Обновляем количество доступных мест на рейсе
+            flight.AvailableSeats -= dto.SeatsBooked;
+
+            // Добавляем бронирование и сохраняем изменения
+            _context.Booking.Add(booking);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("Getbooking", new { id = booking.Id }, booking);
+            return Ok(new
+            {
+                Message = "Бронирование успешно создано",
+                BookingId = booking.Id,
+                TotalPrice = booking.TotalPrice
+            });
         }
+
+
+
 
         // DELETE: api/bookings/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> Deletebooking(int id)
         {
-            var booking = await _context.booking.FindAsync(id);
+            var booking = await _context.Booking.FindAsync(id);
             if (booking == null)
             {
                 return NotFound();
             }
 
-            _context.booking.Remove(booking);
+            _context.Booking.Remove(booking);
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -102,7 +196,7 @@ namespace muzafarova_backend.Controllers
 
         private bool bookingExists(int id)
         {
-            return _context.booking.Any(e => e.Id == id);
+            return _context.Booking.Any(e => e.Id == id);
         }
     }
 }
